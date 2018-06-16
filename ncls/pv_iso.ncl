@@ -14,7 +14,7 @@ begin
      ;---Parameters
      TEST     = False                       ; test mode
      outtype  = "png"                       ; graphic output type
-     ilev     = (/320.0/) ; isentropic levels [K]
+     ilev     = (/325.0/) ; isentropic levels [K]
      ilevs    = dimsizes(ilev)              ; number of isentropic levels
      gridType = 0                           ; 0: gaussian,  1: reqular (?)
      opt      = 1                           ; 0: pv only,   1: list (pv, s, theta)

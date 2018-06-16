@@ -6,14 +6,21 @@
 ; load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"  
 ; load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"  
 ;=================================================================================
+; 
+; 1) cfs_get_vars()
+; 2) cfs_calc_ipv()
+; 3) cfs_plot_ipv()
+;
+; ---------------------------------------------------------------------------------
 
+
+; 1) --- cfs_get_vars()
+; =====================
 undef("cfs_get_vars")
 function cfs_get_vars(indir)
 local first_file, f1, LEV, all_files
 begin
     ;---PARAMETERS
-
-
     ;---Read in pressure levels from first file
     first_file = systemfunc("ls " + indir + "/" + "pgb*.grb2 | head -1")     
     f1         = addfile(first_file, "r")
@@ -55,8 +62,8 @@ end
 
 
 
-
-
+; --- cfs_calc_ipv()
+; ==================
 undef("cfs_calc_ipv")
 function cfs_calc_ipv(plev,u,v,t,ilev)
 local PV, gridType, opt, pv, s, theta
@@ -96,6 +103,8 @@ end
 
 
 
+; --- cfs_plot_ipv()
+; ==================
 undef("cfs_plot_ipv")
 function cfs_plot_ipv(ilev, ipv, outdir)
 local TEST, ret, junk, dims, ntim, klev, nlat, mlon, ntStrt, ntLast,
@@ -190,42 +199,3 @@ begin
   return plot
 end
 
-
-
-
-;;; TESTE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-begin
-
-;---PARAMETERS
-testin  = "/scratch/mmasarik/EXP_JUNE2010/CFS/sandbox/cfsr"
-testout = testin + "/" + "images"
-ilevels = (/ 330.0 /)
-
-
-;---Get Variables
-UVT  = cfs_get_vars(testin)
-PLEV = UVT[0]
-U    = UVT[1]
-V    = UVT[2]
-T    = UVT[3]
-delete(UVT)
-printVarSummary(PLEV)
-printVarSummary(U)
-printVarSummary(V)
-printVarSummary(T)
-
-
-;---Calc IPV
-IPV   = cfs_calc_ipv(PLEV,U,V,T,ilevels)
-ilevs = IPV[0]
-ipv   = IPV[1]
-delete(IPV)
-printVarSummary(ilevs)
-printVarSummary(ipv)
-
-;---Plot IPV
-plotstub = cfs_plot_ipv(ilevs, ipv, testout)
-
-
-end
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
