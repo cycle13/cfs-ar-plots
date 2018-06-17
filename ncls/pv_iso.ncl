@@ -329,7 +329,7 @@ begin
      res@cnLinesOn            = True
      res@cnLineLabelsOn       = False
      res@cnLevelSelectionMode = "ManualLevels"       ; manually set contour levels
-     res@cnMinLevelValF       = 0.5                  ; minimum contour level
+     res@cnMinLevelValF       = 0.25                  ; minimum contour level
      res@cnMaxLevelValF       = 5.0                  ; maximum contour level
      res@cnLevelSpacingF      = 0.25                 ; interval between contours
      res@lbOrientation        = "Vertical"   

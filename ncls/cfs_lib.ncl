@@ -7,17 +7,18 @@
 ; load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"  
 ;=================================================================================
 ; 
-; 1) cfs_get_vars()
+; 1) cfs_get_ipv_vars()
 ; 2) cfs_calc_ipv()
 ; 3) cfs_plot_ipv()
+; 4) cfs_get_ivt_vars()
 ;
 ; ---------------------------------------------------------------------------------
 
 
-; 1) --- cfs_get_vars()
-; =====================
-undef("cfs_get_vars")
-function cfs_get_vars(indir)
+; 1) --- cfs_get_ipv_vars()
+; =========================
+undef("cfs_get_ipv_vars")
+function cfs_get_ipv_vars(indir)
 local first_file, f1, LEV, all_files
 begin
     ;---PARAMETERS
@@ -199,3 +200,50 @@ begin
   return plot
 end
 
+
+
+; 4) --- cfs_get_ivt_vars()
+; =========================
+undef("cfs_get_ivt_vars")
+function cfs_get_ivt_vars(indir)
+local first_file, f1, LEV, all_files
+begin
+    ;---PARAMETERS
+    ;---Read in pressure levels from first file
+    first_file = systemfunc("ls " + indir + "/" + "pgb*.grb2 | head -1")     
+    f1         = addfile(first_file, "r")
+    LEV        = f1->lv_ISBL0    ; Pa
+    printVarSummary(LEV)
+
+
+    ;---Use systemfunc/ls
+    print("Getting file list from directory: " + indir + "...")
+    all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2")
+    printVarSummary(all_files)
+
+    ;---Open files using addfiles
+    print("Adding files: " + all_files + "...")
+    fall = addfiles (all_files, "r")
+    printVarSummary(fall)
+
+    ;---Read in files using "join" mode
+    print("Joining along time dim...")
+    ListSetType (fall, "join")
+    printVarSummary(fall)
+
+    ;---Get Variables: U, V, T
+    print("Retrieving / joining U...")
+    U     = fall[:]->UGRD_P0_L100_GLL0     ; U-component wind, on an isobaric surface [m/s]
+    print("Retrieving / joining V...")
+    V     = fall[:]->VGRD_P0_L100_GLL0     ; V-component wind, on an isobaric surface [m/s]
+    print("Retrieving / joining T...")
+    T     = fall[:]->TMP_P0_L100_GLL0      ; Temperature, on an isobaric surface      [K]
+
+    ;---Reverse lat dimension.   orig: 90..-90   |-->   new: -90..90
+    print("Reversing lat dimension...")
+    U     = U(:,:,::-1,:)             ; reorder to South -> North
+    V     = V(:,:,::-1,:)
+    T     = T(:,:,::-1,:)
+
+  return [/LEV, U, V, T/]
+end
