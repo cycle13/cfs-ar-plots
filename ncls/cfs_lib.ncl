@@ -19,7 +19,7 @@
 ; =========================
 undef("cfs_get_ipv_vars")
 function cfs_get_ipv_vars(indir)
-local first_file, f1, LEV, all_files
+local first_file, f1, LEV, all_files, fall
 begin
     ;---PARAMETERS
     ;---Read in pressure levels from first file
@@ -206,8 +206,17 @@ end
 ; =========================
 undef("cfs_get_ivt_vars")
 function cfs_get_ivt_vars(indir)
-local first_file, f1, LEV, all_files
+local first_file, f1, LEV, all_files, fall, U, V, q
 begin
+    ;---DATA DICTIONARY----------------------------------------------
+    ;
+    ;  U-wind:      UGRD_P0_L100_GLL0(plev, lat, lon)  [m/s]
+    ;  V-wind:      VGRD_P0_L100_GLL0(plev, lat, lon)  [m/s]
+    ;  q-spc_hum:   SPFH_P0_L100_GLL0(plev, lat, lon)  [kg/kg]
+    ;
+    ;  IVT:         IVT(lat, lon)                      [kg/ms]
+    ;----------------------------------------------------------------
+
     ;---PARAMETERS
     ;---Read in pressure levels from first file
     first_file = systemfunc("ls " + indir + "/" + "pgb*.grb2 | head -1")     
@@ -231,19 +240,70 @@ begin
     ListSetType (fall, "join")
     printVarSummary(fall)
 
-    ;---Get Variables: U, V, T
+    ;---Get Variables: U, V, q
     print("Retrieving / joining U...")
     U     = fall[:]->UGRD_P0_L100_GLL0     ; U-component wind, on an isobaric surface [m/s]
     print("Retrieving / joining V...")
     V     = fall[:]->VGRD_P0_L100_GLL0     ; V-component wind, on an isobaric surface [m/s]
-    print("Retrieving / joining T...")
-    T     = fall[:]->TMP_P0_L100_GLL0      ; Temperature, on an isobaric surface      [K]
+    print("Retrieving / joining q...")
+    q     = fall[:]->SPFH_P0_L100_GLL0     ; q specific humidity, on an isobaric surface [kg/kg]
 
     ;---Reverse lat dimension.   orig: 90..-90   |-->   new: -90..90
     print("Reversing lat dimension...")
     U     = U(:,:,::-1,:)             ; reorder to South -> North
     V     = V(:,:,::-1,:)
-    T     = T(:,:,::-1,:)
+    q     = q(:,:,::-1,:)
 
-  return [/LEV, U, V, T/]
+  return [/LEV, U, V, q/]
 end
+
+
+
+; 5) --- cfs_get_iwv_vars()
+; =========================
+undef("cfs_get_iwv_vars")
+function cfs_get_iwv_vars(indir)
+local first_file, f1, LEV, all_files, fall, q
+begin
+    ;---DATA DICTIONARY----------------------------------------------
+    ;
+    ;  q-spc_hum:   SPFH_P0_L100_GLL0(plev, lat, lon)  [kg/kg]
+    ;
+    ;  IWV:         IWV(lat, lon)                      [kg/m^2 = mm]
+    ;----------------------------------------------------------------
+
+    ;---PARAMETERS
+    ;---Read in pressure levels from first file
+    first_file = systemfunc("ls " + indir + "/" + "pgb*.grb2 | head -1")     
+    f1         = addfile(first_file, "r")
+    LEV        = f1->lv_ISBL0    ; Pa
+    printVarSummary(LEV)
+
+
+    ;---Use systemfunc/ls
+    print("Getting file list from directory: " + indir + "...")
+    all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2")
+    printVarSummary(all_files)
+
+    ;---Open files using addfiles
+    print("Adding files: " + all_files + "...")
+    fall = addfiles (all_files, "r")
+    printVarSummary(fall)
+
+    ;---Read in files using "join" mode
+    print("Joining along time dim...")
+    ListSetType (fall, "join")
+    printVarSummary(fall)
+
+    ;---Get Variable: q
+    print("Retrieving / joining q...")
+    q     = fall[:]->SPFH_P0_L100_GLL0     ; q specific humidity, on an isobaric surface [kg/kg]
+
+    ;---Reverse lat dimension.   orig: 90..-90   |-->   new: -90..90
+    print("Reversing lat dimension...")
+    q     = q(:,:,::-1,:)
+
+  return [/LEV, q/]
+end
+
+
