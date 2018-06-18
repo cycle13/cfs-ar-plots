@@ -8,15 +8,17 @@
 ;=================================================================================
 ;
 ; I. IPV
-;    1) get_ipv_vars()
-;    2) calc_ipv()
-;    3) plot_ipv()
-; II. IVT + IWV
-;    4) get_ivt_vars()
-;    5) calc_ivt()
-;    6) get_iwv_vars()
-;    7) calc_iwv()
-;    8) plot_iwv_ivt()
+; x   1) get_ipv_vars()
+; x   2) calc_ipv()
+; x   3) plot_ipv()
+; II. IVT
+; x   4) get_ivt_vars()
+; x   5) calc_ivt()
+;    6) plot_ivt()
+; III. IWV
+; x   7) get_iwv_vars()
+; x   8) calc_iwv()
+; x   9) plot_iwv()
 ;
 ; ---------------------------------------------------------------------------------
 
@@ -52,11 +54,11 @@ begin
 
     ;---Get Variables: U, V, T
     print("Retrieving / joining U...")
-    U     = fall[:]->UGRD_P0_L100_GLL0     ; U-component wind, on an isobaric surface [m/s]
+    U     = fall[:]->UGRD_P0_L100_GLL0  ; U-component wind, on an isobaric surface [m/s]
     print("Retrieving / joining V...")
-    V     = fall[:]->VGRD_P0_L100_GLL0     ; V-component wind, on an isobaric surface [m/s]
+    V     = fall[:]->VGRD_P0_L100_GLL0  ; V-component wind, on an isobaric surface [m/s]
     print("Retrieving / joining T...")
-    T     = fall[:]->TMP_P0_L100_GLL0      ; Temperature, on an isobaric surface      [K]
+    T     = fall[:]->TMP_P0_L100_GLL0   ; Temperature, on an isobaric surface      [K]
 
     ;---Reverse lat dimension.   orig: 90..-90   |-->   new: -90..90
     print("Reversing lat dimension...")
@@ -263,11 +265,77 @@ begin
   return [/LEV, U, V, q/]
 end
 
+
+
+
 ; 5) --- calc_ivt()
 ; =================
+undef("calc_ivt")
+function calc_ivt(PLEV,q,u,v,Ptop,Psfc)
+local g, ivt_u, ivt_v, ivt_mag, dp, plev_dim
+begin
+    ;---DATA DICTIONARY----------------------------------------------
+    ;  IVT = 1/g S_p V*q*dp [kg/ms]
+    ;----------------------------------------------------------------
+
+    ;---PARAMETERS
+    g                 = 9.81   ; gravitational acc. [m s^-2]
+    vopt              = 1      ; vertical opt:  1 = weighted sum (integral)
+    
+    ;---Calculate dp
+    dp = dpres_plevel(PLEV, Psfc, Ptop, 0)
+
+    ;---Integrate V*q (velocity, specific humidity) over vertical column
+    plev_dim          = 1        ; q(time,plev,lat,lon) --> plev dim = 1
+
+    ;---IVT_u, u-component
+    q_u               = q * u
+    ivt_u             = (1/g) * wgt_vertical_n(q_u, dp, vopt, plev_dim)
+    ivt_u@long_name   = "Integrated Vapor Transport - U-component"
+    ivt@units         = "kg m^-1 s^-1"
+
+    ;---IVT_v, v-component
+    q_v               = q * v
+    ivt_v             = (1/g) * wgt_vertical_n(q_v, dp, vopt, plev_dim)
+    ivt_v@long_name   = "Integrated Vapor Transport - V-component"
+    ivt@units         = "kg m^-1 s^-1"
 
 
-; 6) --- get_iwv_vars()
+    ;---IVT_mag, magnitude (total vector)
+    QV_mag            = sqrt( (q_u * q_u) + (q_v * q_v) )
+    ivt_mag           = (1/g) * wgt_vertical_n(QV_mag, dp, vopt, plev_dim)
+    ivt_mag@long_name = "Integrated Vapor Transport - magnitude"
+    ivt_mag@units     = "kg m^-1 s^-1"
+
+  return [/ivt_u, ivt_v, ivt_mag/]
+end
+
+
+
+
+
+; 6) --- plot_ivt()
+; =================
+undef("plot_ivt")
+function plot_ivt()
+local 
+begin
+    ;---DATA DICTIONARY----------------------------------------------
+    ;
+    ;----------------------------------------------------------------
+
+    ;---PARAMETERS
+    tmpvar = "IMPLEMENT: plot_ivt()"
+    print(tmpvar)
+
+  return tmpvar
+end
+
+
+
+
+
+; 7) --- get_iwv_vars()
 ; =====================
 undef("get_iwv_vars")
 function get_iwv_vars(indir)
@@ -316,14 +384,148 @@ end
 
 
 
-
-; 7) --- calc_iwv()
+; 8) --- calc_iwv()
 ; =================
+undef("calc_iwv")
+function calc_iwv(PLEV,q,Ptop,Psfc)
+local g, iwv, dp, plev_dim
+begin
+    ;---DATA DICTIONARY----------------------------------------------
+    ;  IWV = 1/g S_p q*dp [kg m^-2 == mm]
+    ;----------------------------------------------------------------
+
+    ;---PARAMETERS
+    g     = 9.81   ; gravitational acc. [m s^-2]
+    vopt  = 1      ; vertical opt:  1 = weighted sum (integral)
+    
+    ;---Calculate dp
+    dp = dpres_plevel(PLEV, Psfc, Ptop, 0)
+
+    ;---Integrate q (specific humidity) over vertical column
+    plev_dim = 1        ; q(time,plev,lat,lon) --> plev dim = 1
+    iwv      = (1/g) * wgt_vertical_n(q, dp, vopt, plev_dim)
+
+    iwv@long_name = "Integrated Water Vapor"
+    iwv@units     = "mm"
+
+  return iwv
+end
+
+
+
+; 9) --- plot_iwv()
+; =================
+undef("plot_iwv")
+function plot_iwv(iwv, outdir)
+local TEST, ret, junk, dims, ntim, nlat, mlon, ntStrt, ntLast,
+      outfile, res, resP, nt, nt_padded, wks, plot, outtype, outbase
+begin
+     ;---PARAMETERS
+     TEST     = True
+     outtype  = "png"
+     outbase  = "iwv"
+
+     ;---Check/create output directory
+     ret = systemfunc("test -d " + outdir + "; echo $?")
+     if (0 .ne. ret) then
+         junk = systemfunc("mkdir -pv " + outdir)
+     else
+         junk = systemfunc("rm    -rf " + outdir)
+         junk = systemfunc("mkdir -pv " + outdir)
+     end if
+  
+     ;---Get iwv dims
+     dims = dimsizes(iwv)
+     ntim = dims(0)
+     nlat = dims(1)
+     mlon = dims(2)
+
+     ;---Time period parameters
+     if (TEST) then
+         ntStrt = 0
+         ntLast = 0
+     else
+         ntStrt = 0
+         ntLast = ntim-1
+     end if
+
+     ;---General plot resources (res)
+     res                      = True
+     res@gsnDraw              = False
+     res@gsnFrame             = False
+     res@cnFillOn             = True                 ; turn on color fill
+     res@cnLinesOn            = True
+     res@cnLineLabelsOn       = False
+     res@cnLevelSelectionMode = "ManualLevels"       ; manually set contour levels
+     res@cnMinLevelValF       = 10.0                 ; minimum contour level
+     res@cnMaxLevelValF       = 40.0                 ; maximum contour level
+     res@cnLevelSpacingF      =  2.0                 ; interval between contours
+     res@lbOrientation        = "Vertical"   
+;     res@gsnCenterString      = ilev(0)+"K"
+
+     ;---Location  (currently, centered over Pacific basin)
+     res@mpCenterLonF         = 177.5
+     res@mpMaxLatF            =  55           ; choose subregion           
+     res@mpMinLatF            =   0
+     res@mpMaxLonF            = 260
+     res@mpMinLonF            =  95
+
+     ;---Panel plot resources (resP)
+     resP                     = True
+     resP@gsnMaximize         = True  
+
+
+
+     ;---LOOP(time)
+     print(" ")
+     print("LOOP over dim: time=" + ntStrt + ".." + ntLast)
+     do nt=ntStrt,ntLast
+
+        ;---Get time step, padded if necessary. 3-digit default.
+        if (nt .lt. 10) then
+            nt_padded = "00" + nt
+        else if (nt .lt. 100) then
+            nt_padded = "0"  + nt
+        else
+            nt_padded =        nt
+        end if
+        end if
+        print(" ")
+        print("t=" + nt_padded)
+
+
+        ;---Get plot workstation, related
+        outfile               = outdir + "/" + "iwv_t" + nt_padded
+        wks                   = gsn_open_wks(outtype,outfile)
+        gsn_define_colormap(wks,"MPL_Paired")
+
+        ;---Call plot routine
+        res@gsnLeftString     = "IWV: time=" + nt_padded
+        plot = gsn_csm_contour_map(wks,iwv(nt,:,:),res)   
+
+        print("OUTPUT FILE: "+outfile+"."+outtype)
+     end do
+  return plot
+end
 
 
 
 
-; 8) --- plot_iwv_ivt()
-; =====================
 
+;;; RESOURCES
+
+; ; ) --- ...()
+; ; =================
+; undef("...")
+; function ...()
+; local ...
+; begin
+;     ;---DATA DICTIONARY----------------------------------------------
+;     ;
+;     ;----------------------------------------------------------------
+
+;     ;---PARAMETERS
+
+;   return ...
+; end
 
