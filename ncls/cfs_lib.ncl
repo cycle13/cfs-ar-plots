@@ -6,19 +6,25 @@
 ; load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"  
 ; load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"  
 ;=================================================================================
-; 
-; 1) cfs_get_ipv_vars()
-; 2) cfs_calc_ipv()
-; 3) cfs_plot_ipv()
-; 4) cfs_get_ivt_vars()
+;
+; I. IPV
+;    1) get_ipv_vars()
+;    2) calc_ipv()
+;    3) plot_ipv()
+; II. IVT + IWV
+;    4) get_ivt_vars()
+;    5) calc_ivt()
+;    6) get_iwv_vars()
+;    7) calc_iwv()
+;    8) plot_iwv_ivt()
 ;
 ; ---------------------------------------------------------------------------------
 
 
-; 1) --- cfs_get_ipv_vars()
-; =========================
-undef("cfs_get_ipv_vars")
-function cfs_get_ipv_vars(indir)
+; 1) --- get_ipv_vars()
+; =====================
+undef("get_ipv_vars")
+function get_ipv_vars(indir)
 local first_file, f1, LEV, all_files, fall
 begin
     ;---PARAMETERS
@@ -63,10 +69,10 @@ end
 
 
 
-; --- cfs_calc_ipv()
-; ==================
-undef("cfs_calc_ipv")
-function cfs_calc_ipv(plev,u,v,t,ilev)
+; 2) --- calc_ipv()
+; =================
+undef("calc_ipv")
+function calc_ipv(plev,u,v,t,ilev)
 local PV, gridType, opt, pv, s, theta
 begin
      ;---PARAMETERS
@@ -104,10 +110,10 @@ end
 
 
 
-; --- cfs_plot_ipv()
-; ==================
-undef("cfs_plot_ipv")
-function cfs_plot_ipv(ilev, ipv, outdir)
+; 3) --- plot_ipv()
+; =================
+undef("plot_ipv")
+function plot_ipv(ilev, ipv, outdir)
 local TEST, ret, junk, dims, ntim, klev, nlat, mlon, ntStrt, ntLast,
       outfile, res, resP, nt, nt_padded, wks, plot, outtype
 begin
@@ -202,10 +208,10 @@ end
 
 
 
-; 4) --- cfs_get_ivt_vars()
-; =========================
-undef("cfs_get_ivt_vars")
-function cfs_get_ivt_vars(indir)
+; 4) --- get_ivt_vars()
+; =====================
+undef("get_ivt_vars")
+function get_ivt_vars(indir)
 local first_file, f1, LEV, all_files, fall, U, V, q
 begin
     ;---DATA DICTIONARY----------------------------------------------
@@ -257,12 +263,14 @@ begin
   return [/LEV, U, V, q/]
 end
 
+; 5) --- calc_ivt()
+; =================
 
 
-; 5) --- cfs_get_iwv_vars()
-; =========================
-undef("cfs_get_iwv_vars")
-function cfs_get_iwv_vars(indir)
+; 6) --- get_iwv_vars()
+; =====================
+undef("get_iwv_vars")
+function get_iwv_vars(indir)
 local first_file, f1, LEV, all_files, fall, q
 begin
     ;---DATA DICTIONARY----------------------------------------------
@@ -305,5 +313,17 @@ begin
 
   return [/LEV, q/]
 end
+
+
+
+
+; 7) --- calc_iwv()
+; =================
+
+
+
+
+; 8) --- plot_iwv_ivt()
+; =====================
 
 
