@@ -271,7 +271,7 @@ end
 ; 5) --- calc_ivt()
 ; =================
 undef("calc_ivt")
-function calc_ivt(PLEV,q,u,v,Ptop,Psfc)
+function calc_ivt(PLEV, u, v, q, Psfc, Ptop)
 local g, ivt_u, ivt_v, ivt_mag, dp, plev_dim
 begin
     ;---DATA DICTIONARY----------------------------------------------
@@ -387,7 +387,7 @@ end
 ; 8) --- calc_iwv()
 ; =================
 undef("calc_iwv")
-function calc_iwv(PLEV,q,Ptop,Psfc)
+function calc_iwv(PLEV, q, Psfc, Ptop)
 local g, iwv, dp, plev_dim
 begin
     ;---DATA DICTIONARY----------------------------------------------
@@ -416,7 +416,7 @@ end
 ; 9) --- plot_iwv()
 ; =================
 undef("plot_iwv")
-function plot_iwv(iwv, outdir)
+function plot_iwv(iwv, Psfc, Ptop, outdir)
 local TEST, ret, junk, dims, ntim, nlat, mlon, ntStrt, ntLast,
       outfile, res, resP, nt, nt_padded, wks, plot, outtype, outbase
 begin
@@ -461,7 +461,7 @@ begin
      res@cnMaxLevelValF       = 40.0                 ; maximum contour level
      res@cnLevelSpacingF      =  2.0                 ; interval between contours
      res@lbOrientation        = "Vertical"   
-;     res@gsnCenterString      = ilev(0)+"K"
+     res@gsnCenterString      = "Psfc: " + Psfc + "Pa, Ptop: " + Ptop + "Pa"
 
      ;---Location  (currently, centered over Pacific basin)
      res@mpCenterLonF         = 177.5

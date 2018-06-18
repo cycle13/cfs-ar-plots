@@ -27,14 +27,14 @@ begin
 
     ;---CALC IWV
     print("Calculating IVT...")
-    iwv     = calc_iwv(PLEV,q)
+    iwv     = calc_iwv(PLEV, q, Psfc, Ptop)
     if (TEST) then
         printVarSummary(iwv)
     end if
 
     ;---PLOT IWV
     print("Plotting IVT...")
-    plotiwv = plot_iwv(iwv, outdir)
+    plotiwv = plot_iwv(iwv, Psfc, Ptop, outdir)
 
 end
 
