@@ -479,9 +479,10 @@ begin
     ;----------------------------------------------------------------
 
     ; Vertical pressure integration
-    iwv             =  vert_p_intgrl(Plev, Psfc, Ptop, q)
-    iwv@long_name   = "Integrated Water Vapor (IWV)"
-    iwv@units       = "mm"
+    iwv              =  vert_p_intgrl(Plev, Psfc, Ptop, q)
+    iwv@long_name    = "Integrated Water Vapor"
+    iwv@units        = "mm"
+    iwv@initial_time = q@initial_time
   
     printVarSummary(iwv)
     printMinMax(iwv,1)
@@ -575,12 +576,12 @@ begin
         print("Opening a workstation...")
         outfile               = outdir + "/" + "cfs_iwv_t" + nt_padded
         wks                   = gsn_open_wks(outtype,outfile)
-        gsn_define_colormap(wks,"BlueDarkOrange18")
+        gsn_define_colormap(wks,"matlab_jet")
         gsn_reverse_colormap(wks)           ; Reverse the color map.
 
         ;---Call plot routine
         print("Call to plot routine...")
-        res@gsnLeftString     = "IWV: time=" + nt_padded
+        res@gsnLeftString     = "IWV:  " + iwv@initial_time + " UTC"
         plot = gsn_csm_contour_map(wks,iwv(nt,:,:),res)   
 
         print("OUTPUT FILE: "+outfile+"."+outtype)
