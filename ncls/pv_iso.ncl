@@ -321,6 +321,7 @@ begin
          ntLast = ntim-1
      end if
 
+     cnLevs = (/ 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0 /)
      ;---General plot resources (res)
      res                      = True
      res@gsnDraw              = False
@@ -328,10 +329,12 @@ begin
      res@cnFillOn             = True                 ; turn on color fill
      res@cnLinesOn            = True
      res@cnLineLabelsOn       = False
-     res@cnLevelSelectionMode = "ManualLevels"       ; manually set contour levels
-     res@cnMinLevelValF       = 0.25                  ; minimum contour level
-     res@cnMaxLevelValF       = 5.0                  ; maximum contour level
-     res@cnLevelSpacingF      = 0.25                 ; interval between contours
+     res@cnLevelSelectionMode = "ExplicitLevels"       ; manually set contour levels
+     res@cnLevels             = cnLevs
+     ; res@cnLevelSelectionMode = "ManualLevels"       ; manually set contour levels
+     ; res@cnMinLevelValF       = 0.25                  ; minimum contour level
+     ; res@cnMaxLevelValF       = 5.0                  ; maximum contour level
+     ; res@cnLevelSpacingF      = 0.25                 ; interval between contours
      res@lbOrientation        = "Vertical"   
      res@gsnCenterString = ilev(0)+"K"
 
@@ -381,7 +384,7 @@ begin
         plot(1) = gsn_csm_contour_map(wks,ipv3(nt,{ilev(0)},:,:),res)   
 
         ;---3:  CFSRR: 2010-05-26
-        res@gsnLeftString     = "IPV: CFSR 2010-05-26 - time=" + nt_padded        
+        res@gsnLeftString     = "IPV: CFSRR 2010-05-26 - time=" + nt_padded        
         plot(2) = gsn_csm_contour_map(wks,ipv4(nt,{ilev(0)},:,:),res)           
 
         ;---0:  CFSR
