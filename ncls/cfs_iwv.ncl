@@ -7,7 +7,7 @@ load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib.ncl"
 begin
     ;---PARAMETERS
     TEST    = False
-    Psfc    = 100000.0     ; [Pa] 
+    Psfc    = 100001.0     ; [Pa]   Must be > 100000.0
     Ptop    =  30000.0     ; [Pa]
     indir   = "/scratch/mmasarik/EXP_JUNE2010/CFS/sandbox/cfsr"
     outdir  = indir + "/" + "images/iwv"
@@ -25,15 +25,17 @@ begin
         printVarSummary(q)
     end if
 
+
     ;---CALC IWV
-    print("Calculating IVT...")
+    print("Calculating IWV...")
     iwv     = calc_iwv(PLEV, q, Psfc, Ptop)
     if (TEST) then
         printVarSummary(iwv)
     end if
 
+
     ;---PLOT IWV
-    print("Plotting IVT...")
+    print("Plotting IWV...")
     plotiwv = plot_iwv(iwv, Psfc, Ptop, outdir)
 
 end

@@ -40,6 +40,6 @@ begin
 
     ;---PLOT IPV
     print("Plotting IPV...")
-    plotipv = plot_ipv(ipv, outdir)
+    plotipv = plot_ipv(ilevel, ipv, outdir)
 end
 
