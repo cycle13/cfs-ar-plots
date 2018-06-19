@@ -7,6 +7,7 @@
 ; load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"  
 ;=================================================================================
 ;
+; x   0) vert_p_intgrl()
 ; I. IPV
 ; x   1) get_ipv_vars()
 ; x   2) calc_ipv()
@@ -20,7 +21,7 @@
 ; x   8) calc_iwv()
 ; x   9) plot_iwv()
 ; IV. Misc.
-;    10) vert_intgrl()
+;    10)
 ;
 ; NOTES:
 ; * PLEV
@@ -33,7 +34,7 @@
 
 
 ; 0) --- vert_p_intgrl()
-; ==============++======
+; ======================
 undef("vert_p_intgrl")
 function vert_p_intgrl(Plevels,Psfc,Ptop,X)
 local P0, P100, dims, ntim, klev, ylat, xlon, dp, X_vert
@@ -527,14 +528,13 @@ begin
 
      ;---General plot resources (res)
      res                      = True
-     res@gsnMaximize          = True  
      res@gsnDraw              = True
      res@gsnFrame             = True
      res@cnFillOn             = True                 ; turn on color fill
      res@cnLinesOn            = True
      res@cnLineLabelsOn       = False
      res@cnLevelSelectionMode = "ManualLevels"       ; manually set contour levels
-     res@cnMinLevelValF       = 10.0                 ; minimum contour level
+     res@cnMinLevelValF       = 20.0                 ; minimum contour level
      res@cnMaxLevelValF       = 70.0                 ; maximum contour level
      res@cnLevelSpacingF      =  5.0                 ; interval between contours
      res@lbOrientation        = "Vertical"   
@@ -573,15 +573,15 @@ begin
 
         ;---Get plot workstation, related
         print("Opening a workstation...")
-        outfile               = outdir + "/" + "iwv_t" + nt_padded
+        outfile               = outdir + "/" + "cfs_iwv_t" + nt_padded
         wks                   = gsn_open_wks(outtype,outfile)
-;        gsn_define_colormap(wks,"MPL_Paired")
+        gsn_define_colormap(wks,"BlueDarkOrange18")
+        gsn_reverse_colormap(wks)           ; Reverse the color map.
 
         ;---Call plot routine
         print("Call to plot routine...")
         res@gsnLeftString     = "IWV: time=" + nt_padded
         plot = gsn_csm_contour_map(wks,iwv(nt,:,:),res)   
-;        print("plot: " + plot)
 
         print("OUTPUT FILE: "+outfile+"."+outtype)
      end do
