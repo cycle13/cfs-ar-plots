@@ -10,7 +10,7 @@ begin
     TEST    = False
     Psfc    = 100001.0     ; [Pa]   Must be > 100000.0
     Ptop    =  30000.0     ; [Pa]
-    indir   = "/scratch/mmasarik/EXP_JUNE2010/CFS/reanalysis"
+    indir   = "/scratch/mmasarik/EXP_JUNE2010/CFS/sandbox/cfsr"
     outimg  = "/scratch/mmasarik/EXP_JUNE2010/CFS/images"
     outdir  = outimg + "/" + "iwv" + "/" + dirtag
 
@@ -27,7 +27,7 @@ begin
         printVarSummary(q)
     end if
 
-
+exit
     ;---CALC IWV
     print("Calculating IWV...")
     iwv     = calc_iwv(PLEV, Psfc, Ptop, q)
