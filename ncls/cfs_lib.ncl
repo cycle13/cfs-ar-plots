@@ -14,7 +14,7 @@
 ; x   3) plot_ipv()
 ; II. IVT
 ; x   4) get_ivt_vars()
-; x   5) calc_ivt()
+;    5) calc_ivt()
 ;    6) plot_ivt()
 ; III. IWV
 ; x   7) get_iwv_vars()
@@ -111,7 +111,7 @@ end
 ; =====================
 undef("get_ipv_vars")
 function get_ipv_vars(indir)
-local first_file, f1, LEV, all_files, fall
+local first_file, f1, LEV, all_files, fall, times
 begin
     ;---PARAMETERS
     ;---Read in pressure levels from first file
@@ -143,6 +143,9 @@ begin
     V     = fall[:]->VGRD_P0_L100_GLL0  ; V-component wind, on an isobaric surface [m/s]
     print("Retrieving / joining T...")
     T     = fall[:]->TMP_P0_L100_GLL0   ; Temperature, on an isobaric surface      [K]
+    print("Retrieving / joining times...")
+    times = fall[:]->TMP_P0_L100_GLL0@initial_time ; get times
+
 
     ;---Reverse lat dimension.   orig: 90..-90   |-->   new: -90..90
     print("Reversing lat dimension...")
@@ -150,7 +153,7 @@ begin
     V     = V(:,:,::-1,:)
     T     = T(:,:,::-1,:)
 
-  return [/LEV, U, V, T/]
+  return [/times, LEV, U, V, T/]
 end
 
 
@@ -297,7 +300,7 @@ end
 ; =====================
 undef("get_ivt_vars")
 function get_ivt_vars(indir)
-local first_file, f1, LEV, all_files, fall, U, V, q
+local first_file, f1, LEV, all_files, fall, U, V, q, times
 begin
     ;---DATA DICTIONARY----------------------------------------------
     ;
@@ -338,6 +341,9 @@ begin
     V     = fall[:]->VGRD_P0_L100_GLL0     ; V-component wind, on an isobaric surface [m/s]
     print("Retrieving / joining q...")
     q     = fall[:]->SPFH_P0_L100_GLL0     ; q specific humidity, on an isobaric surface [kg/kg]
+    print("Retrieving / joining times...")
+    times = fall[:]->SPFH_P0_L100_GLL0@initial_time ; get times
+
 
     ;---Reverse lat dimension.   orig: 90..-90   |-->   new: -90..90
     print("Reversing lat dimension...")
@@ -345,7 +351,7 @@ begin
     V     = V(:,:,::-1,:)
     q     = q(:,:,::-1,:)
 
-  return [/LEV, U, V, q/]
+  return [/times, LEV, U, V, q/]
 end
 
 
@@ -359,34 +365,32 @@ local g, ivt_u, ivt_v, ivt_mag, dp, plev_dim
 begin
     ;---DATA DICTIONARY----------------------------------------------
     ;  IVT = 1/g S_p V*q*dp [kg/ms]
+    ;
+    ;  FAILDE
+    ;  ivt_u    = (1/g) * wgt_vertical_n(q_u, dp, vopt, plev_dim)
+    ;  ivt_v    = (1/g) * wgt_vertical_n(q_v, dp, vopt, plev_dim)
+    ;  ivt_mag  = (1/g) * wgt_vertical_n(QV_mag, dp, vopt, plev_dim)
     ;----------------------------------------------------------------
 
-    ;---PARAMETERS
-    g                 = 9.81   ; gravitational acc. [m s^-2]
-    vopt              = 1      ; vertical opt:  1 = weighted sum (integral)
-    
-    ;---Calculate dp
-    dp = dpres_plevel(PLEV, Psfc, Ptop, 0)
-
-    ;---Integrate V*q (velocity, specific humidity) over vertical column
-    plev_dim          = 1        ; q(time,plev,lat,lon) --> plev dim = 1
 
     ;---IVT_u, u-component
     q_u               = q * u
-    ivt_u             = (1/g) * wgt_vertical_n(q_u, dp, vopt, plev_dim)
+    ivt_u             = vert_p_intgrl(PLEV, Psfc, Ptop, q_u)
     ivt_u@long_name   = "Integrated Vapor Transport - U-component"
     ivt@units         = "kg m^-1 s^-1"
 
+
+
     ;---IVT_v, v-component
     q_v               = q * v
-    ivt_v             = (1/g) * wgt_vertical_n(q_v, dp, vopt, plev_dim)
+    ivt_v             = vert_p_intgrl(PLEV, Psfc, Ptop, q_v)
     ivt_v@long_name   = "Integrated Vapor Transport - V-component"
     ivt@units         = "kg m^-1 s^-1"
 
 
+
     ;---IVT_mag, magnitude (total vector)
     QV_mag            = sqrt( (q_u * q_u) + (q_v * q_v) )
-    ivt_mag           = (1/g) * wgt_vertical_n(QV_mag, dp, vopt, plev_dim)
     ivt_mag@long_name = "Integrated Vapor Transport - magnitude"
     ivt_mag@units     = "kg m^-1 s^-1"
 
@@ -423,7 +427,7 @@ end
 ; =====================
 undef("get_iwv_vars")
 function get_iwv_vars(indir)
-local first_file, f1, LEV, all_files, fall, q
+local first_file, f1, LEV, all_files, fall, q, times
 begin
     ;---DATA DICTIONARY----------------------------------------------
     ;
@@ -458,12 +462,14 @@ begin
     ;---Get Variable: q
     print("Retrieving / joining q...")
     q     = fall[:]->SPFH_P0_L100_GLL0     ; q specific humidity, on an isobaric surface [kg/kg]
+    print("Retrieving / joining times...")
+    times = fall[:]->SPFH_P0_L100_GLL0@initial_time ; get times
 
     ;---Reverse lat dimension.   orig: 90..-90   |-->   new: -90..90
     print("Reversing lat dimension...")
     q     = q(:,:,::-1,:)
 
-  return [/LEV, q/]
+  return [/times, LEV, q/]
 end
 
 
