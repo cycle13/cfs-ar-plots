@@ -28,7 +28,7 @@ begin
 
     ;---CALC IWV
     print("Calculating IWV...")
-    iwv     = calc_iwv(PLEV, q, Psfc, Ptop)
+    iwv     = calc_iwv(PLEV, Psfc, Ptop, q)
     if (TEST) then
         printVarSummary(iwv)
     end if

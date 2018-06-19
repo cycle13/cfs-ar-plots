@@ -19,6 +19,8 @@
 ; x   7) get_iwv_vars()
 ; x   8) calc_iwv()
 ; x   9) plot_iwv()
+; IV. Misc.
+;    10) vert_intgrl()
 ;
 ; NOTES:
 ; * PLEV
@@ -28,6 +30,80 @@
 ;
 ;
 ; ---------------------------------------------------------------------------------
+
+
+; 0) --- vert_p_intgrl()
+; ==============++======
+undef("vert_p_intgrl")
+function vert_p_intgrl(Plevels,Psfc,Ptop,X)
+local P0, P100, dims, ntim, klev, ylat, xlon, dp, X_vert
+begin
+    ;---DATA DICTIONARY----------------------------------------------
+    ;        FAILED ATTEMPTS...?
+    ; * Integrate over vertical column
+    ;     vopt      = 1  ; vert opt:  1 = weighted sum for all non-missing vals
+    ;     plev_dim  = 1  ; q(time,plev,lat,lon) --> plev dim = 1
+    ;                          0 ,  1 , 2 , 3
+    ;
+    ; iwv  = (1/g) * wgt_vertical_n(q, dp, vopt=1, plev_dim=1)    
+    ; iwv  = (1/g) * dim_sum_wgt_n_Wrap(q_reorder, dp, sopt=1, 1)
+    ;
+    ;----------------------------------------------------------------
+
+    ;---PARAMETERS
+    g     =      9.81  ; [m s^-2],  gravity acc.
+    P0    = 100000.0   ; [Pa],      reference pressure of surface
+    P100  =  10000.0   ; [Pa],      100 hPa
+
+    ;---Meta data for X
+    X!0  = "time"
+    X!1  = "lev"
+    X!2  = "lat"
+    X!3  = "lon"
+    dims = dimsizes(X)
+    ntim = dims(0)
+    klev = dims(1)
+    ylat = dims(2)
+    xlon = dims(3)
+
+    ;---Create new:  X_vert
+    X_vert = new((/ntim,ylat,xlon/),float,0.0)  ; assign zero to start, for summing
+
+    ;---Calculate dp
+    dp = dpres_plevel_Wrap(Plevels, Psfc, Ptop, 0)  ; func(): requires Psfc > P0
+
+
+    ;   ---   VERTICAL INTEGRATION     ---     ;
+    ; =========================================;
+
+    ;---Select pressure level index range
+    if (Ptop .eq. P100) then
+      lvStart = 10            ; (10): 10000.0 [Pa]       
+    else
+      lvStart = 17            ; (17): 30000.0 [Pa]
+    end if
+    lvStop  = 36              ; (36):  100000.0 [Pa]
+    do tt=0,ntim-1            ;---LOOP: time
+      X_vert(tt,:,:)    =  (1/g) * X(tt,lvStart,:,:) * dp(lvStart)
+      do ll=lvStart+1,lvStop  ;---LOOP: lev 
+        X_vert(tt,:,:)  = X_vert(tt,:,:)  +  (1/g) * X(tt,ll,:,:) * dp(ll)
+      end do
+    end do
+
+    ;---Meta data for X_vert
+    copy_VarCoords_1(X(time|:, lat|:, lon|:, lev|:), X_vert)
+    X_vert!0           = "time"
+    X_vert!1           = "lat"    
+    X_vert!2           = "lon"
+    X_vert&lat         = X&lat
+    X_vert&lon         = X&lon
+    X_vert&lat@units   = "degrees_north"    
+    X_vert&lon@units   = "degrees_east"
+    X_vert@_FillValue  = X@_FillValue
+
+  return X_vert
+end
+
 
 
 ; 1) --- get_ipv_vars()
@@ -394,36 +470,20 @@ end
 ; 8) --- calc_iwv()
 ; =================
 undef("calc_iwv")
-function calc_iwv(PLEV, q, Psfc, Ptop)
-local g, iwv, dp, plev_dim
+function calc_iwv(Plev, Psfc, Ptop, q)
+local iwv
 begin
     ;---DATA DICTIONARY----------------------------------------------
     ;  IWV = 1/g S_p q*dp [kg m^-2 == mm]
     ;----------------------------------------------------------------
 
-    ;---PARAMETERS
-    g     = 9.81   ; gravitational acc. [m s^-2]
-
-    
-    ;---Calculate dp
-    dp = dpres_plevel_Wrap(PLEV, Psfc, Ptop, 0)
-
-    ;---Integrate q (specific humidity) over vertical column
-    vopt     = 1        ; vertical opt:  1 = weighted sum for all non-missing vals
-    plev_dim = 1        ; q(time,plev,lat,lon) --> plev dim = 1
-    iwv      = (1/g) * dim_sum_wgt_n_Wrap(q, dp, vopt, plev_dim)
-
-    iwv!0         = "time"
-    iwv!1         = "lat"    
-    iwv!2         = "lon"
-;;;    iwv&lat       = q&lat_0
-;;;    iwv&lon       = q&lon_0
-    iwv@long_name = "Integrated Water Vapor"
-    iwv@units     = "mm"
-
-
-   printVarSummary(iwv)
-   printMinMax(iwv,1)
+    ; Vertical pressure integration
+    iwv             =  vert_p_intgrl(Plev, Psfc, Ptop, q)
+    iwv@long_name   = "Integrated Water Vapor (IWV)"
+    iwv@units       = "mm"
+  
+    printVarSummary(iwv)
+    printMinMax(iwv,1)
   return iwv
 end
 
@@ -431,13 +491,13 @@ end
 
 ; 9) --- plot_iwv()
 ; =================
-undef("plot_iwv")
+undef("plot_iwv")                     
 function plot_iwv(iwv, Psfc, Ptop, outdir)
 local TEST, ret, junk, dims, ntim, nlat, mlon, ntStrt, ntLast,
       outfile, res, resP, nt, nt_padded, wks, plot, outtype, outbase
 begin
      ;---PARAMETERS
-     TEST     = True
+     TEST     = False
      outtype  = "png"
      outbase  = "iwv"
 
@@ -467,15 +527,16 @@ begin
 
      ;---General plot resources (res)
      res                      = True
-     res@gsnDraw              = False
-     res@gsnFrame             = False
+     res@gsnMaximize          = True  
+     res@gsnDraw              = True
+     res@gsnFrame             = True
      res@cnFillOn             = True                 ; turn on color fill
      res@cnLinesOn            = True
      res@cnLineLabelsOn       = False
      res@cnLevelSelectionMode = "ManualLevels"       ; manually set contour levels
      res@cnMinLevelValF       = 10.0                 ; minimum contour level
-     res@cnMaxLevelValF       = 40.0                 ; maximum contour level
-     res@cnLevelSpacingF      =  2.0                 ; interval between contours
+     res@cnMaxLevelValF       = 70.0                 ; maximum contour level
+     res@cnLevelSpacingF      =  5.0                 ; interval between contours
      res@lbOrientation        = "Vertical"   
      res@gsnCenterString      = "Psfc: " + Psfc + "Pa, Ptop: " + Ptop + "Pa"
 
@@ -487,8 +548,8 @@ begin
      res@mpMinLonF            =  95
 
      ;---Panel plot resources (resP)
-     resP                     = True
-     resP@gsnMaximize         = True  
+;     resP                     = True
+;     resP@gsnMaximize         = True  
 
 
 
@@ -511,18 +572,26 @@ begin
 
 
         ;---Get plot workstation, related
+        print("Opening a workstation...")
         outfile               = outdir + "/" + "iwv_t" + nt_padded
         wks                   = gsn_open_wks(outtype,outfile)
-        gsn_define_colormap(wks,"MPL_Paired")
+;        gsn_define_colormap(wks,"MPL_Paired")
 
         ;---Call plot routine
+        print("Call to plot routine...")
         res@gsnLeftString     = "IWV: time=" + nt_padded
         plot = gsn_csm_contour_map(wks,iwv(nt,:,:),res)   
+;        print("plot: " + plot)
 
         print("OUTPUT FILE: "+outfile+"."+outtype)
      end do
   return plot
 end
+
+
+
+
+
 
 
 
@@ -589,3 +658,25 @@ end
 ; (34)95000
 ; (35)97500
 ; (36)100000
+
+
+;     ;---Calculate dp
+;     dp = dpres_plevel_Wrap(Plevels, Psfc, Ptop, 0)  ; func(): requires Psfc > P0
+
+;     ;---Select pressure level index range
+;     if (Ptop .eq. P100) then
+;       lvStart = 10   ; (10): 10000.0 [Pa]       
+;     else
+;       lvStart = 17   ; (17): 30000.0 [Pa]
+;     end if
+;     lvStop  = 36          ; (36):  100000.0 [Pa]
+; ;    Psfc    = P0          ; After dpres_plevel_Wrap(), set Psfc = P0
+;     do tt=0,ntim-1
+;       iwv(tt,:,:) =  (1/g) * q(tt,lvStart,:,:) * dp(lvStart)
+
+;       do ll=lvStart+1,lvStop
+;         iwv(tt,:,:)   = iwv(tt,:,:)  +  (1/g) * q(tt,ll,:,:) * dp(ll)
+
+;       end do
+;     end do
+
