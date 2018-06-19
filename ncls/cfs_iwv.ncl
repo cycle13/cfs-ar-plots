@@ -6,11 +6,13 @@ load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib.ncl"
 
 begin
     ;---PARAMETERS
+    dirtag  = "test3"
     TEST    = False
     Psfc    = 100001.0     ; [Pa]   Must be > 100000.0
     Ptop    =  30000.0     ; [Pa]
-    indir   = "/scratch/mmasarik/EXP_JUNE2010/CFS/sandbox/cfsr"
-    outdir  = indir + "/" + "images/iwv"
+    indir   = "/scratch/mmasarik/EXP_JUNE2010/CFS/reanalysis"
+    outimg  = "/scratch/mmasarik/EXP_JUNE2010/CFS/images"
+    outdir  = outimg + "/" + "iwv" + "/" + dirtag
 
 
 
