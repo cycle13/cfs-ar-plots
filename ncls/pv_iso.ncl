@@ -14,6 +14,7 @@ begin
      ;---Parameters
      TEST     = False                       ; test mode
      outtype  = "png"                       ; graphic output type
+     outbase  = "cfs_ipv"
      ilev     = (/325.0/) ; isentropic levels [K]
      ilevs    = dimsizes(ilev)              ; number of isentropic levels
      gridType = 0                           ; 0: gaussian,  1: reqular (?)
@@ -55,13 +56,16 @@ begin
      ListSetType (fall1, "join")
      printVarSummary(fall1)
 
-     ;---Get Variables: U, V, T
+     ;---Get Variables: U, V, T, times
      print("Retrieving / joining U1...")
      U1  = fall1[:]->UGRD_P0_L100_GLL0  ; U-component wind, on an isobaric surface [m/s]
      print("Retrieving / joining V1...")
      V1  = fall1[:]->VGRD_P0_L100_GLL0  ; V-component wind, on an isobaric surface [m/s]
      print("Retrieving / joining T1...")
      T1  = fall1[:]->TMP_P0_L100_GLL0   ; Temperature, on an isobaric surface      [K]
+     print("Retrieving / joining times...")
+     times  = fall1[:]->TMP_P0_L100_GLL0@initial_time   ; Temp, initial_time att
+
 
      ;---Reverse lat dimension.   orig: 90..-90   |-->   new: -90..90
      print("Reversing lat dimension 1...")
@@ -321,7 +325,7 @@ begin
          ntLast = ntim-1
      end if
 
-     cnLevs = (/ 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0 /)
+;     cnLevs = (/ 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0 /)
      ;---General plot resources (res)
      res                      = True
      res@gsnDraw              = False
@@ -329,14 +333,14 @@ begin
      res@cnFillOn             = True                 ; turn on color fill
      res@cnLinesOn            = True
      res@cnLineLabelsOn       = False
-     res@cnLevelSelectionMode = "ExplicitLevels"       ; manually set contour levels
-     res@cnLevels             = cnLevs
-     ; res@cnLevelSelectionMode = "ManualLevels"       ; manually set contour levels
-     ; res@cnMinLevelValF       = 0.25                  ; minimum contour level
-     ; res@cnMaxLevelValF       = 5.0                  ; maximum contour level
-     ; res@cnLevelSpacingF      = 0.25                 ; interval between contours
+     ; res@cnLevelSelectionMode = "ExplicitLevels"       ; manually set contour levels
+     ; res@cnLevels             = cnLevs
+     res@cnLevelSelectionMode = "ManualLevels"       ; manually set contour levels
+     res@cnMinLevelValF       = 0.5                  ; minimum contour level
+     res@cnMaxLevelValF       = 5.0                  ; maximum contour level
+     res@cnLevelSpacingF      = 0.25                 ; interval between contours
      res@lbOrientation        = "Vertical"   
-     res@gsnCenterString = ilev(0)+"K"
+     res@gsnCenterString      = "IPV(" + "theta=" + ilev(0)+"K)"
 
      ;---Location  (currently, centered over Pacific basin)
      res@mpCenterLonF         = 177.5
@@ -353,6 +357,7 @@ begin
      ;---LOOP(time)
      print(" ")
      print("LOOP over dim: time=" + ntStrt + ".." + ntLast)
+     print(times)
      do nt=ntStrt,ntLast
 
         ;---Get time step, padded if necessary. 3-digit default.
@@ -369,29 +374,27 @@ begin
 
 
         ;---Get plot workstation, related
-        outfile               = outdir + "/" + "pv_isentropic_t" + nt_padded
+        outfile               = outdir + "/" + outbase + "_t" + nt_padded
         plot                  = new(4,graphic)  ; graphic: number of panels
         wks                   = gsn_open_wks("png",outfile)
 
 
 
         ;---1:  CFSRR 2010-05-16
-        res@gsnLeftString     = "IPV: CFSRR 2010-05-16 - time=" + nt_padded        
+        res@gsnLeftString     = times(nt) + "    CFSRR 2010-05-16"
         plot(0) = gsn_csm_contour_map(wks,ipv2(nt,{ilev(0)},:,:),res)   
 
         ;---2:  CFSRR: 2010-05-21
-        res@gsnLeftString     = "IPV: CFSRR 2010-05-21  - time=" + nt_padded        
+        res@gsnLeftString     = times(nt) + "    CFSRR 2010-05-21"
         plot(1) = gsn_csm_contour_map(wks,ipv3(nt,{ilev(0)},:,:),res)   
 
         ;---3:  CFSRR: 2010-05-26
-        res@gsnLeftString     = "IPV: CFSRR 2010-05-26 - time=" + nt_padded        
+        res@gsnLeftString     = times(nt) + "    CFSRR 2010-05-26"
         plot(2) = gsn_csm_contour_map(wks,ipv4(nt,{ilev(0)},:,:),res)           
 
         ;---0:  CFSR
-        res@gsnLeftString     = "IPV: CFSR - time=" + nt_padded
+        res@gsnLeftString     = times(nt) + "    CFSR"
         plot(3) = gsn_csm_contour_map(wks,ipv1(nt,{ilev(0)},:,:),res)   
-
-
 
         
         ;---Plot panels as one plot

@@ -19,8 +19,9 @@ begin
     ;---GET VARIABLES
     print("Getting variable: q...")
     Q       = get_iwv_vars(indir)
-    PLEV    = Q[0]
-    q       = Q[1]
+    Times   = Q[0]
+    PLEV    = Q[1]
+    q       = Q[2]
     delete(Q)
     if (TEST) then
         printVarSummary(PLEV)
