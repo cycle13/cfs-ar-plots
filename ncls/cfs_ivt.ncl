@@ -17,12 +17,14 @@ begin
     ;---GET VARIABLES
     print("Getting variables: U, V, q...")
     UVQ     = get_ivt_vars(indir)
-    PLEV    = UVQ[0]
-    U       = UVQ[1]
-    V       = UVQ[2]
-    q       = UVQ[3]
+    Times   = UVQ[0]
+    PLEV    = UVQ[1]
+    U       = UVQ[2]
+    V       = UVQ[3]
+    q       = UVQ[4]
     delete(UVQ)
     if (TEST) then
+    	printVarSummary(Times)
 	printVarSummary(PLEV)
 	printVarSummary(U)
 	printVarSummary(V)
@@ -32,7 +34,7 @@ begin
 
     ;---CALC IVT
     print("Calculating IVT...")
-    IVT     = calc_ivt(PLEV,U,V,q,Psfc,Ptop)
+    IVT     = calc_ivt(PLEV, U, V, q, Psfc, Ptop)
     ivt_u   = IVT[0]
     ivt_v   = IVT[1] 
     ivt_mag = IVT[2] 
@@ -46,6 +48,6 @@ begin
 
     ;---PLOT IVT
     print("Plotting IVT...")
-    plotivt = plot_ivt(ivt_u, ivt_v, ivt_mag, outdir)
+    plotivt = plot_ivt(Times, ivt_u, ivt_v, ivt_mag, outdir)
 end
 

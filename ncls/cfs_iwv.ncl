@@ -1,7 +1,8 @@
 ;=================================================================================
 ; cfs_iwv.ncl:  Calculates and plots contours of Integrated Water Vapor (IWV).
 ; --------------------------------------------------------------------------------
-load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib.ncl"
+load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_gen.ncl"
+load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_iwv.ncl"
 ;=================================================================================
 
 begin
@@ -28,7 +29,6 @@ begin
         printVarSummary(q)
     end if
 
-exit
     ;---CALC IWV
     print("Calculating IWV...")
     iwv     = calc_iwv(PLEV, Psfc, Ptop, q)
@@ -39,7 +39,7 @@ exit
 
     ;---PLOT IWV
     print("Plotting IWV...")
-    plotiwv = plot_iwv(iwv, Psfc, Ptop, outdir)
+    plotiwv = plot_iwv(Times, Psfc, Ptop, iwv, outdir)
 
 end
 

@@ -96,8 +96,6 @@ begin
     X_vert!0           = "time"
     X_vert!1           = "lat"    
     X_vert!2           = "lon"
-    X_vert&lat         = X&lat
-    X_vert&lon         = X&lon
     X_vert&lat@units   = "degrees_north"    
     X_vert&lon@units   = "degrees_east"
     X_vert@_FillValue  = X@_FillValue
@@ -376,6 +374,7 @@ begin
     ;---IVT_u, u-component
     q_u               = q * u
     ivt_u             = vert_p_intgrl(PLEV, Psfc, Ptop, q_u)
+    copy_VarCoords(u, ivt_u)
     ivt_u@long_name   = "Integrated Vapor Transport - U-component"
     ivt@units         = "kg m^-1 s^-1"
 
@@ -384,6 +383,7 @@ begin
     ;---IVT_v, v-component
     q_v               = q * v
     ivt_v             = vert_p_intgrl(PLEV, Psfc, Ptop, q_v)
+    copy_VarCoords(v, ivt_v)
     ivt_v@long_name   = "Integrated Vapor Transport - V-component"
     ivt@units         = "kg m^-1 s^-1"
 
@@ -391,7 +391,9 @@ begin
 
     ;---IVT_mag, magnitude (total vector)
     QV_mag            = sqrt( (q_u * q_u) + (q_v * q_v) )
-    ivt_mag@long_name = "Integrated Vapor Transport - magnitude"
+    ivt_mag           = vert_p_intgrl(PLEV, Psfc, Ptop, QV_mag)
+    copy_VarCoords(v, ivt_mag)
+    ivt_mag@long_name = "Integrated Vapor Transport - Magnitude"
     ivt_mag@units     = "kg m^-1 s^-1"
 
   return [/ivt_u, ivt_v, ivt_mag/]
@@ -403,20 +405,102 @@ end
 
 ; 6) --- plot_ivt()
 ; =================
-; undef("plot_ivt")
-; function plot_ivt()
-; local 
-; begin
-;     ;---DATA DICTIONARY----------------------------------------------
-;     ;
-;     ;----------------------------------------------------------------
+undef("plot_ivt")
+function plot_ivt(Times, ivt_u, ivt_v, ivt_mag, outdir)
+local TEST, outtype, outbase, ret, junk, Tdim, Tsize, nt, 
+      ntStrt, ntLast, res, nt_padded, outfile, nt_padded, 
+      wks, vector_ivt
+begin
+    ;---DATA DICTIONARY----------------------------------------------
+    ;
+    ;----------------------------------------------------------------
+    ;---PARAMETERS
 
-;     ;---PARAMETERS
-;     tmpvar = "IMPLEMENT: plot_ivt()"
-;     print(tmpvar)
 
-;   return tmpvar
-; end
+;;; NEEDS coord copy
+
+    TEST     = True
+    outtype  = "png"
+    outbase  = "cfs_ivt"
+
+    ;---Check/create output directory
+    ret = systemfunc("test -d " + outdir + "; echo $?")
+    if (0 .ne. ret) then
+	junk = systemfunc("mkdir -pv " + outdir)
+    else
+	junk = systemfunc("rm    -rf " + outdir)
+	junk = systemfunc("mkdir -pv " + outdir)
+    end if
+
+    ; get number of time steps
+    Tdim  = dimsizes(Times)
+    Tsize = Tdim(0)
+   
+    ;---Time period parameters
+    if (TEST) then
+	ntStrt = 0
+	ntLast = 0
+    else
+	ntStrt = 0
+	ntLast = Tsize-1
+    end if
+
+
+    ; ***************************************
+    ;       PLOT SET-UP
+    ; **************************************
+    ;---Set common resources for all plots
+    res                       = True
+    res@gsnFrame              = True
+    res@gsnDraw               = True
+    res@gsnRightString        = ivt_u@units
+
+    ;---Location  (currently, centered over Pacific basin)
+    res@mpCenterLonF          = 177.5
+    res@mpMaxLatF             =  55           ; choose subregion           
+    res@mpMinLatF             =   0
+    res@mpMaxLonF             = 260
+    res@mpMinLonF             =  95
+
+    ;---Wind vector plot
+    res                       = res
+    res@vcMinDistanceF        = 0.06
+    res@vcRefLengthF          = 0.04
+    res@vcMinFracLengthF      = 0.2
+    res@vcLineArrowThicknessF = 3.0
+    res@vcGlyphStyle          = "CurlyVector"
+    res@vcRefAnnoOn           = False
+
+
+
+
+    ;---LOOP(time)
+    print(" ")
+    print("LOOP over dim: time=" + ntStrt + ".." + ntLast)
+    do nt=ntStrt,ntLast
+
+        ;---Get time step, padded if necessary. 3-digit default.
+        if (nt .lt. 10) then
+            nt_padded         = "00" + nt
+        else if (nt .lt. 100) then
+            nt_padded         = "0"  + nt
+        else
+            nt_padded         = nt
+        end if
+        end if
+        print(" ")
+        print("t=" + nt_padded)
+
+        ;---Get plot workstation, related
+        outfile               = outdir + "/" + outbase + "_t" + nt_padded
+        wks                   = gsn_open_wks(outtype,outfile)
+
+        res@gsnLeftString     = Times(nt) + "    IVT"
+        vector_ivt            = gsn_csm_vector_map(wks,ivt_u(nt,:,:),ivt_v(nt,:,:),res)
+    end do
+
+  return vector_ivt
+end
 
 
 
@@ -486,6 +570,14 @@ begin
 
     ; Vertical pressure integration
     iwv              =  vert_p_intgrl(Plev, Psfc, Ptop, q)
+
+    ; Meta data fiddling
+    q!0  = "times"
+    q!1  = "lev"
+    q!2  = "lat"
+    q!3  = "lon"
+    q_reorder        q(time|:, lat|:, lon|:, lev|:)
+    copy_VarCoords_1(q_reorder, iwv)
     iwv@long_name    = "Integrated Water Vapor"
     iwv@units        = "mm"
     iwv@initial_time = q@initial_time
@@ -500,7 +592,7 @@ end
 ; 9) --- plot_iwv()
 ; =================
 undef("plot_iwv")                     
-function plot_iwv(iwv, Psfc, Ptop, outdir)
+function plot_iwv(Times, Psfc, Ptop, iwv, outdir)
 local TEST, ret, junk, dims, ntim, nlat, mlon, ntStrt, ntLast,
       outfile, res, resP, nt, nt_padded, wks, plot, outtype, outbase
 begin
@@ -533,6 +625,17 @@ begin
          ntLast = ntim-1
      end if
 
+     ; get integer values for P levels, and units in hPa (= mb) for display
+     if ( Psfc .ge. 100000.0 ) then
+         Psfc = 1000
+     end if
+     if ( Ptop .ge. 10000.0 ) then
+         Ptop = 100
+     else
+         Ptop = 300
+     end if
+
+
      ;---General plot resources (res)
      res                      = True
      res@gsnDraw              = True
@@ -545,7 +648,7 @@ begin
      res@cnMaxLevelValF       = 70.0                 ; maximum contour level
      res@cnLevelSpacingF      =  5.0                 ; interval between contours
      res@lbOrientation        = "Vertical"   
-     res@gsnCenterString      = "Psfc: " + Psfc + "Pa, Ptop: " + Ptop + "Pa"
+     res@gsnCenterString      = "Psfc: " + Psfc + "mb, Ptop: " + Ptop + "mb"
 
      ;---Location  (currently, centered over Pacific basin)
      res@mpCenterLonF         = 177.5
@@ -553,11 +656,6 @@ begin
      res@mpMinLatF            =   0
      res@mpMaxLonF            = 260
      res@mpMinLonF            =  95
-
-     ;---Panel plot resources (resP)
-;     resP                     = True
-;     resP@gsnMaximize         = True  
-
 
 
      ;---LOOP(time)
@@ -587,7 +685,7 @@ begin
 
         ;---Call plot routine
         print("Call to plot routine...")
-        res@gsnLeftString     = "IWV:  " + iwv@initial_time + " UTC"
+        res@gsnLeftString     = Times(nt) + "UTC"
         plot = gsn_csm_contour_map(wks,iwv(nt,:,:),res)   
 
         print("OUTPUT FILE: "+outfile+"."+outtype)
