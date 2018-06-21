@@ -8,7 +8,8 @@ load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_ivt.ncl"
 begin
     ;---PARAMETERS
     dirtag  = "test"
-    TEST    = False
+    TEST    = True
+    IVT_MAG_MIN = 250          ; [kg m^-1 s^-1] 
     Psfc    = 100001.0     ; [Pa] 
     Ptop    =  30000.0     ; [Pa]
     indir   = "/scratch/mmasarik/EXP_JUNE2010/CFS/sandbox/cfsr"
@@ -20,7 +21,7 @@ begin
 
     ;---GET VARIABLES
     print("Getting variables: U, V, q...")
-    UVQ     = get_ivt_vars(indir)
+    UVQ     = get_ivt_vars(indir, TEST)
     Times   = UVQ[0]
     PLEV    = UVQ[1]
     U       = UVQ[2]
@@ -52,6 +53,6 @@ begin
 
     ;---PLOT IVT
     print("Plotting IVT...")
-    plotivt = plot_ivt(Times, ivt_u, ivt_v, ivt_mag, outdir)
+    plotivt = plot_ivt(Times, Psfc, Ptop, ivt_u, ivt_v, ivt_mag, IVT_MAG_MIN, outdir)
 end
 

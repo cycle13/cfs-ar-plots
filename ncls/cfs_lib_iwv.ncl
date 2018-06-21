@@ -8,7 +8,7 @@ load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_gen.ncl"
 ; 7) --- get_iwv_vars()
 ; =====================
 undef("get_iwv_vars")
-function get_iwv_vars(indir)
+function get_iwv_vars(indir, TEST_FLAG)
 local first_file, f1, LEV, all_files, fall, q, times
 begin
     ;---DATA DICTIONARY----------------------------------------------
@@ -28,7 +28,11 @@ begin
 
     ;---Use systemfunc/ls
     print("Getting file list from directory: " + indir + "...")
-    all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2")
+    if (TEST_FLAG) then
+        all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2 | head -2")
+    else
+        all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2")
+    end if
     printVarSummary(all_files)
 
     ;---Open files using addfiles
@@ -91,11 +95,10 @@ end
 ; =================
 undef("plot_iwv")                     
 function plot_iwv(Times, Psfc, Ptop, iwv, outdir)
-local TEST, ret, junk, dims, ntim, nlat, mlon, ntStrt, ntLast,
+local ret, junk, dims, ntim, nlat, mlon, ntStrt, ntLast,
       outfile, res, resP, nt, nt_padded, wks, plot, outtype, outbase
 begin
      ;---PARAMETERS
-     TEST     = False
      outtype  = "png"
      outbase  = "iwv"
 
@@ -115,13 +118,8 @@ begin
      mlon = dims(2)
 
      ;---Time period parameters
-     if (TEST) then
-         ntStrt = 0
-         ntLast = 0
-     else
-         ntStrt = 0
-         ntLast = ntim-1
-     end if
+     ntStrt = 0
+     ntLast = ntim-1
 
      ; get integer values for P levels, and units in hPa (= mb) for display
      if ( Psfc .ge. 100000.0 ) then
@@ -146,7 +144,7 @@ begin
      res@cnMaxLevelValF       = 70.0                 ; maximum contour level
      res@cnLevelSpacingF      =  5.0                 ; interval between contours
      res@lbOrientation        = "Vertical"   
-     res@gsnCenterString      = "Psfc: " + Psfc + "mb, Ptop: " + Ptop + "mb"
+     res@gsnCenterString      = "IWV(Psfc:" + Psfc + "mb, Ptop:" + Ptop + "mb)"
 
      ;---Location  (currently, centered over Pacific basin)
      res@mpCenterLonF         = 177.5
@@ -154,6 +152,9 @@ begin
      res@mpMinLatF            =   0
      res@mpMaxLonF            = 260
      res@mpMinLonF            =  95
+     res@mpFillOn             = True
+     res@mpFillColors         = (/0,-1,28,-1/)
+
 
 
      ;---LOOP(time)
@@ -183,7 +184,7 @@ begin
 
         ;---Call plot routine
         print("Call to plot routine...")
-        res@gsnLeftString     = Times(nt) + "UTC"
+        res@gsnLeftString     = Times(nt) + " UTC"
         plot = gsn_csm_contour_map(wks,iwv(nt,:,:),res)   
 
         print("OUTPUT FILE: "+outfile+"."+outtype)

@@ -9,7 +9,7 @@ load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_gen.ncl"
 ; 1) --- get_ipv_vars()
 ; =====================
 undef("get_ipv_vars")
-function get_ipv_vars(indir)
+function get_ipv_vars(indir, TEST_FLAG)
 local first_file, f1, LEV, all_files, fall, times
 begin
     ;---PARAMETERS
@@ -22,7 +22,11 @@ begin
 
     ;---Use systemfunc/ls
     print("Getting file list from directory: " + indir + "...")
-    all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2")
+    if (TEST_FLAG) then
+        all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2 | head -2")
+    else
+        all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2")
+    end if
     printVarSummary(all_files)
 
     ;---Open files using addfiles
@@ -60,7 +64,7 @@ end
 ; 2) --- calc_ipv()
 ; =================
 undef("calc_ipv")
-function calc_ipv(plev,u,v,t,ilev)
+function calc_ipv(plev, u, v, t, ilev)
 local PV, gridType, opt, pv, s, theta
 begin
      ;---PARAMETERS
@@ -108,11 +112,10 @@ end
 ; =================
 undef("plot_ipv")
 function plot_ipv(times, ilev, ipv, outdir)
-local TEST, ret, junk, dims, ntim, klev, nlat, mlon, ntStrt, ntLast,
+local ret, junk, dims, ntim, klev, nlat, mlon, ntStrt, ntLast,
       outfile, res, resP, nt, nt_padded, wks, plot, outtype
 begin
      ;---PARAMETERS
-     TEST     = False
      outtype  = "png"
 
      ;---Check/create output directory
@@ -127,19 +130,14 @@ begin
   
      ;---Get ipv dims
      dims = dimsizes(ipv)
-     klev = dims(0)
-     ntim = dims(1)
+     ntim = dims(0)
+     klev = dims(1)
      nlat = dims(2)
      mlon = dims(3)
 
      ;---Time period parameters
-     if (TEST) then
-         ntStrt      = 0
-         ntLast      = 0
-     else
-         ntStrt = 0
-         ntLast = ntim-1
-     end if
+     ntStrt = 0
+     ntLast = ntim-1
 
 
      ;---General plot resources (res)
@@ -195,9 +193,8 @@ begin
 
         ;---Call plot routine
         print("Plotting call...")
-        res@gsnLeftString     = times(nt)
+        res@gsnLeftString     = times(nt) + " UTC"
         plot = gsn_csm_contour_map(wks,ipv(nt,0,:,:),res)   
-        print("Done plotting.")
         print("OUTPUT FILE: "+outfile+"."+outtype)
      end do
 

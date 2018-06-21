@@ -8,7 +8,7 @@ load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_iwv.ncl"
 begin
     ;---PARAMETERS
     dirtag  = "test"
-    TEST    = False
+    TEST    = True
     Psfc    = 100001.0     ; [Pa]   Must be > 100000.0
     Ptop    =  30000.0     ; [Pa]
     indir   = "/scratch/mmasarik/EXP_JUNE2010/CFS/sandbox/cfsr"
@@ -19,7 +19,7 @@ begin
 
     ;---GET VARIABLES
     print("Getting variable: q...")
-    Q       = get_iwv_vars(indir)
+    Q       = get_iwv_vars(indir, TEST)
     Times   = Q[0]
     PLEV    = Q[1]
     q       = Q[2]

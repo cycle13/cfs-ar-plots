@@ -10,7 +10,7 @@ load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_gen.ncl"
 ; 4) --- get_ivt_vars()
 ; =====================
 undef("get_ivt_vars")
-function get_ivt_vars(indir)
+function get_ivt_vars(indir, TEST_FLAG)
 local first_file, f1, LEV, all_files, fall, U, V, q, times
 begin
     ;---DATA DICTIONARY----------------------------------------------
@@ -32,7 +32,11 @@ begin
 
     ;---Use systemfunc/ls
     print("Getting file list from directory: " + indir + "...")
-    all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2")
+    if (TEST_FLAG) then
+        all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2 | head -2")
+    else
+        all_files = systemfunc("ls " + indir + "/" + "pgb*.grb2")
+    end if
     printVarSummary(all_files)
 
     ;---Open files using addfiles
@@ -122,7 +126,7 @@ end
 ; 6) --- plot_ivt()
 ; =================
 undef("plot_ivt")
-function plot_ivt(Times, ivt_u, ivt_v, ivt_mag, outdir)
+function plot_ivt(Times, Psfc, Ptop, ivt_u, ivt_v, ivt_mag, ivt_mag_min, outdir)
 local TEST, outtype, outbase, ret, junk, Tdim, Tsize, nt, 
       ntStrt, ntLast, res, nt_padded, outfile, nt_padded, 
       wks, vector_ivt
@@ -131,7 +135,6 @@ begin
     ;
     ;----------------------------------------------------------------
     ;---PARAMETERS
-    TEST     = True
     outtype  = "png"
     outbase  = "cfs_ivt"
 
@@ -149,12 +152,26 @@ begin
     Tsize = Tdim(0)
    
     ;---Time period parameters
-    if (TEST) then
-	ntStrt = 0
-	ntLast = 0
+    ntStrt = 0
+    ntLast = Tsize-1
+
+
+    ; get integer values for P levels, and units in hPa (= mb) for display
+    if ( Psfc .ge. 100000.0 ) then
+	Psfc = 1000
+    end if
+    if ( Ptop .ge. 30000.0 ) then
+	Ptop = 300
     else
-	ntStrt = 0
-	ntLast = Tsize-1
+	Ptop = 100
+    end if
+
+
+    ;---Impose minimum value of ivt_mag below which ivt_* is set to zero
+    if (ivt_mag_min .ne. -1) then
+      ivt_u    = where(ivt_mag.le.ivt_mag_min, 0., ivt_u)
+      ivt_v    = where(ivt_mag.le.ivt_mag_min, 0., ivt_v)
+      ivt_mag  = where(ivt_mag.le.ivt_mag_min, 0., ivt_mag)
     end if
 
 
@@ -165,7 +182,7 @@ begin
     res                       = True
     res@gsnFrame              = True
     res@gsnDraw               = True
-    res@gsnRightString        = ivt_u@units
+    res@gsnCenterString      = "IVT(Psfc:" + Psfc + "mb, Ptop:" + Ptop + "mb)"
 
     ;---Location  (currently, centered over Pacific basin)
     res@mpCenterLonF          = 177.5
@@ -173,10 +190,13 @@ begin
     res@mpMinLatF             =   0
     res@mpMaxLonF             = 260
     res@mpMinLonF             =  95
+    res@mpFillOn              = True
+    res@mpFillColors          = (/0,-1,28,-1/)
+
 
     ;---Wind vector plot
     res                       = res
-    res@vcMinDistanceF        = 0.1
+    res@vcMinDistanceF        = 0.015
     res@vcRefLengthF          = 0.04
     res@vcMinFracLengthF      = 0.2
     res@vcLineArrowThicknessF = 3.0
@@ -208,10 +228,10 @@ begin
         outfile               = outdir + "/" + outbase + "_t" + nt_padded
         wks                   = gsn_open_wks(outtype,outfile)
 
-        res@gsnLeftString     = Times(nt) + "    IVT"
+        res@gsnLeftString     = Times(nt) + " UTC"
         print("Plotting call...")
         vector_ivt            = gsn_csm_vector_map(wks,ivt_u(nt,:,:),ivt_v(nt,:,:),res)
-        print("Done plotting.")
+        print("OUTPUT FILE: "+outfile+"."+outtype)
     end do
 
   return vector_ivt

@@ -1,14 +1,13 @@
 ;===================================================================================
 ; cfs_ipv.ncl:  Computes and plots contours of Isentropic Potential Vorticity (IPV).
 ; ----------------------------------------------------------------------------------
-load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_gen.ncl"
 load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_ipv.ncl"
 ;===================================================================================
 
 begin
     ;---PARAMETERS
     dirtag  = "test"
-    TEST    = False
+    TEST    = True
     ilevel  = 325.0     ; [K]
     indir   = "/scratch/mmasarik/EXP_JUNE2010/CFS/sandbox/cfsr"
     outimg  = "/scratch/mmasarik/EXP_JUNE2010/CFS/images"
@@ -19,7 +18,7 @@ begin
 
     ;---GET VARIABLES
     print("Getting variables: U, V, T...")
-    UVT     = get_ipv_vars(indir)
+    UVT     = get_ipv_vars(indir, TEST)
     Times   = UVT[0]
     PLEV    = UVT[1]
     U       = UVT[2]
