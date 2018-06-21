@@ -244,7 +244,7 @@ end
 ; cfs_ivt.ncl:  Computes and plots vectors of Integrated Vapor Transport (IVT).
 ; --------------------------------------------------------------------------------
 undef("cfs_ivt")
-function cfs_ivt(IVT_MIN, indir, outdir, TEST)
+function cfs_ivt(IVT_MIN, indir, outpth, TEST)
 local dirtag, fidtag, Psfc, Ptop, outdir, UVQ, Times, PLEV, U, V, q, IVT,
       ivt_u, ivt_v, ivt_mag, plotivt
 begin
@@ -254,7 +254,7 @@ begin
     fidtag  = "ivt"
     Psfc    = 100001.0     ; [Pa] 
     Ptop    =  30000.0     ; [Pa]
-    outdir  = outdir + "/" + fidtag + "/" + dirtag
+    outdir  = outpth + "/" + fidtag + "/" + dirtag
 
 
     ;---GET VARIABLES
