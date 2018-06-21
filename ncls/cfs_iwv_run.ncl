@@ -1,45 +1,16 @@
 ;=================================================================================
-; cfs_iwv.ncl:  Calculates and plots contours of Integrated Water Vapor (IWV).
+; cfs_iwv_run.ncl:
 ; --------------------------------------------------------------------------------
-load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_gen.ncl"
 load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_iwv.ncl"
 ;=================================================================================
 
 begin
     ;---PARAMETERS
-    dirtag  = "test"
-    TEST    = True
-    Psfc    = 100001.0     ; [Pa]   Must be > 100000.0
-    Ptop    =  30000.0     ; [Pa]
-    indir   = "/scratch/mmasarik/EXP_JUNE2010/CFS/sandbox/cfsr"
-    outimg  = "/scratch/mmasarik/EXP_JUNE2010/CFS/images"
-    outdir  = outimg + "/" + "iwv" + "/" + dirtag
+    TEST_FLAG   = True
+    IWV_MAG_MIN = 20       ; [kg m^-2 = mm] 
+    in_dir      = "/scratch/mmasarik/EXP_JUNE2010/CFS/sandbox/cfsr"
+    out_dir     = "/scratch/mmasarik/EXP_JUNE2010/CFS/images"
 
-
-
-    ;---GET VARIABLES
-    print("Getting variable: q...")
-    Q       = get_iwv_vars(indir, TEST)
-    Times   = Q[0]
-    PLEV    = Q[1]
-    q       = Q[2]
-    delete(Q)
-    if (TEST) then
-        printVarSummary(PLEV)
-        printVarSummary(q)
-    end if
-
-    ;---CALC IWV
-    print("Calculating IWV...")
-    iwv     = calc_iwv(PLEV, Psfc, Ptop, q)
-    if (TEST) then
-        printVarSummary(iwv)
-    end if
-
-
-    ;---PLOT IWV
-    print("Plotting IWV...")
-    plotiwv = plot_iwv(Times, Psfc, Ptop, iwv, outdir)
-
+    ;---RUN CALL
+    plotiwv     = cfs_iwv(IWV_MAG_MIN, in_dir, out_dir, TEST_FLAG)
 end
-
