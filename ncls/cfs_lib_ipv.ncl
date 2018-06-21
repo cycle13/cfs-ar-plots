@@ -205,9 +205,9 @@ end
 
 
 ;===================================================================================
-; cfs_ipv.ncl:  Computes and plots contours of Isentropic Potential Vorticity (IPV).
+; cfs_ipv():  Computes and plots contours of Isentropic Potential Vorticity (IPV).
 ; ----------------------------------------------------------------------------------
-undef("plot_ipv")
+undef("cfs_ipv")
 function cfs_ipv(ilevel, indir, outpth, TEST)
 local dirtag, fidtag, outdir, UVT, Times, PLEV, U, V, T, IPV, ilev, ipv, plotipv
 begin

@@ -94,7 +94,7 @@ end
 ; 9) --- plot_iwv()
 ; =================
 undef("plot_iwv")                     
-function plot_iwv(Times, Psfc, Ptop, iwv, outdir)
+function plot_iwv(Times, Psfc, Ptop, iwv, IWV_MIN, outdir)
 local ret, junk, dims, ntim, nlat, mlon, ntStrt, ntLast,
       outfile, res, resP, nt, nt_padded, wks, plot, outtype, outbase
 begin
@@ -140,7 +140,7 @@ begin
      res@cnLinesOn            = True
      res@cnLineLabelsOn       = False
      res@cnLevelSelectionMode = "ManualLevels"       ; manually set contour levels
-     res@cnMinLevelValF       = 20.0                 ; minimum contour level
+     res@cnMinLevelValF       = IWV_MIN                 ; minimum contour level
      res@cnMaxLevelValF       = 70.0                 ; maximum contour level
      res@cnLevelSpacingF      =  5.0                 ; interval between contours
      res@lbOrientation        = "Vertical"   
@@ -189,7 +189,53 @@ begin
 
         print("OUTPUT FILE: "+outfile+"."+outtype)
      end do
+
   return plot
 end
 
+
+
+
+;=================================================================================
+; cfs_iwv():  Calculates and plots contours of Integrated Water Vapor (IWV).
+; --------------------------------------------------------------------------------
+undef("cfs_iwv")
+function cfs_iwv(IWV_MIN, indir, outpth, TEST)
+local dirtag, fidtag, Psfc, Ptop, outdir, Q, Times, PLEV, q, iwv, plotiwv
+begin
+    ;---PARAMETERS
+    dirtag  = "test"
+    fidtag  = "iwv"
+    Psfc    = 100001.0     ; [Pa]   Must be > 100000.0
+    Ptop    =  30000.0     ; [Pa]
+    outdir  = outpth + "/" + fidtag + "/" + dirtag
+
+
+
+    ;---GET VARIABLES
+    print("Getting variable: q...")
+    Q       = get_iwv_vars(indir, TEST)
+    Times   = Q[0]
+    PLEV    = Q[1]
+    q       = Q[2]
+    delete(Q)
+    if (TEST) then
+        printVarSummary(PLEV)
+        printVarSummary(q)
+    end if
+
+    ;---CALC IWV
+    print("Calculating IWV...")
+    iwv     = calc_iwv(PLEV, Psfc, Ptop, q)
+    if (TEST) then
+        printVarSummary(iwv)
+    end if
+
+
+    ;---PLOT IWV
+    print("Plotting IWV...")
+    plotiwv = plot_iwv(Times, Psfc, Ptop, iwv, IWV_MIN, outdir)
+
+    return plotiwv
+end
 
