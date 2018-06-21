@@ -7,7 +7,7 @@ load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_iwv.ncl"
 
 begin
     ;---PARAMETERS
-    dirtag  = "test3"
+    dirtag  = "test"
     TEST    = False
     Psfc    = 100001.0     ; [Pa]   Must be > 100000.0
     Ptop    =  30000.0     ; [Pa]

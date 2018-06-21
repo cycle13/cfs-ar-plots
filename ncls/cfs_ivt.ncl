@@ -1,16 +1,20 @@
 ;=================================================================================
 ; cfs_ivt.ncl:  Computes and plots vectors of Integrated Vapor Transport (IVT).
 ; --------------------------------------------------------------------------------
-load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib.ncl"
+load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_gen.ncl"
+load "/scratch/mmasarik/EXP_JUNE2010/CFS/cfs_tools/ncls/cfs_lib_ivt.ncl"
 ;=================================================================================
 
 begin
     ;---PARAMETERS
+    dirtag  = "test"
     TEST    = False
-    Psfc    = 100000.0     ; [Pa] 
+    Psfc    = 100001.0     ; [Pa] 
     Ptop    =  30000.0     ; [Pa]
     indir   = "/scratch/mmasarik/EXP_JUNE2010/CFS/sandbox/cfsr"
-    outdir  = indir + "/" + "images/ivt"
+    outimg  = "/scratch/mmasarik/EXP_JUNE2010/CFS/images"
+    outdir  = outimg + "/" + "ivt" + "/" + dirtag
+
 
 
 

@@ -1,5 +1,12 @@
 ;=================================================================================
-; cfs_lib_gen.ncl:  Calculates and plots contours of Integrated Water Vapor (IWV).
+; cfs_lib_gen.ncl:  
+;
+; NOTES:
+; * PLEV
+;     Psfc = 100000.0 Pa   -- plevel index = (36)
+;     Ptop =  30000.0 Pa   -- plevel index = (17), or
+;     Ptop =  10000.p Pa   -- plevel index = (10)
+;
 ; --------------------------------------------------------------------------------
 ;=================================================================================
 
@@ -63,12 +70,12 @@ begin
     end do
 
     ;---Meta data for X_vert
+    X!0 = "time"
+    X!1 = "lev"
+    X!2 = "lat"
+    X!3 = "lon"
+    copy_VarAtts(X, X_vert)
     copy_VarCoords_1(X(time|:, lat|:, lon|:, lev|:), X_vert)
-    X_vert!0           = "time"
-    X_vert!1           = "lat"    
-    X_vert!2           = "lon"
-    X_vert&lat@units   = "degrees_north"    
-    X_vert&lon@units   = "degrees_east"
     X_vert@_FillValue  = X@_FillValue
 
   return X_vert

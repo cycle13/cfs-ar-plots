@@ -70,11 +70,11 @@ begin
     iwv              =  vert_p_intgrl(Plev, Psfc, Ptop, q)
 
     ; Meta data fiddling
-    q!0  = "times"
+    q!0  = "time"
     q!1  = "lev"
     q!2  = "lat"
     q!3  = "lon"
-    q_reorder        q(time|:, lat|:, lon|:, lev|:)
+    q_reorder        = q(time|:, lat|:, lon|:, lev|:)
     copy_VarCoords_1(q_reorder, iwv)
     iwv@long_name    = "Integrated Water Vapor"
     iwv@units        = "mm"
@@ -127,10 +127,10 @@ begin
      if ( Psfc .ge. 100000.0 ) then
          Psfc = 1000
      end if
-     if ( Ptop .ge. 10000.0 ) then
-         Ptop = 100
-     else
+     if ( Ptop .ge. 30000.0 ) then
          Ptop = 300
+     else
+         Ptop = 100
      end if
 
 
