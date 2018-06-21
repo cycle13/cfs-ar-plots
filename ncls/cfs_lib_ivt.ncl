@@ -182,6 +182,7 @@ begin
     res                       = True
     res@gsnFrame              = True
     res@gsnDraw               = True
+
     res@gsnCenterString      = "IVT(Psfc:" + Psfc + "mb, Ptop:" + Ptop + "mb)"
 
     ;---Location  (currently, centered over Pacific basin)
@@ -235,5 +236,63 @@ begin
     end do
 
   return vector_ivt
+end
+
+
+
+;=================================================================================
+; cfs_ivt.ncl:  Computes and plots vectors of Integrated Vapor Transport (IVT).
+; --------------------------------------------------------------------------------
+undef("cfs_ivt")
+function cfs_ivt(IVT_MIN, indir, outdir, TEST)
+local dirtag, fidtag, Psfc, Ptop, outdir, UVQ, Times, PLEV, U, V, q, IVT,
+      ivt_u, ivt_v, ivt_mag, plotivt
+begin
+    ;IVT  [kg m^-1 s^-1] 
+    ;---PARAMETERS
+    dirtag  = "test"
+    fidtag  = "ivt"
+    Psfc    = 100001.0     ; [Pa] 
+    Ptop    =  30000.0     ; [Pa]
+    outdir  = outdir + "/" + fidtag + "/" + dirtag
+
+
+    ;---GET VARIABLES
+    print("Getting variables: U, V, q...")
+    UVQ     = get_ivt_vars(indir, TEST)
+    Times   = UVQ[0]
+    PLEV    = UVQ[1]
+    U       = UVQ[2]
+    V       = UVQ[3]
+    q       = UVQ[4]
+    delete(UVQ)
+    if (TEST) then
+    	printVarSummary(Times)
+	printVarSummary(PLEV)
+	printVarSummary(U)
+	printVarSummary(V)
+	printVarSummary(q)
+    end if
+
+
+    ;---CALC IVT
+    print("Calculating IVT...")
+    IVT     = calc_ivt(PLEV, U, V, q, Psfc, Ptop)
+    ivt_u   = IVT[0]
+    ivt_v   = IVT[1] 
+    ivt_mag = IVT[2] 
+    delete([/ IVT, U, V, q /])
+    if (TEST) then
+        printVarSummary(ivt_u)
+        printVarSummary(ivt_v)
+        printVarSummary(ivt_mag)
+    end if
+
+
+    ;---PLOT IVT
+    print("Plotting IVT...")
+    plotivt = plot_ivt(Times, Psfc, Ptop, ivt_u, ivt_v, ivt_mag, IVT_MIN, outdir)
+
+    return plotivt
 end
 
